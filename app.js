@@ -1,91 +1,75 @@
-const MOODS = [
-  { emoji: "😞", value: 1 },
-  { emoji: "😕", value: 2 },
-  { emoji: "😐", value: 3 },
-  { emoji: "🙂", value: 4 },
-  { emoji: "😄", value: 5 },
-];
+const timerEl = document.getElementById("timer");
+const statusEl = document.getElementById("status");
+const startBtn = document.getElementById("startBtn");
+const distractBtn = document.getElementById("distractBtn");
+const stopBtn = document.getElementById("stopBtn");
+const resultEl = document.getElementById("result");
 
-const STORAGE_KEY = "mood-journal";
-const picker = document.getElementById("moodPicker");
-const noteInput = document.getElementById("noteInput");
-const saveBtn = document.getElementById("saveBtn");
-const chart = document.getElementById("chart");
-const entriesList = document.getElementById("entries");
-const todayDate = document.getElementById("todayDate");
+let startTime = null, tick = null;
+let distractions = 0;
+let lastDistractionAt = null;
+let gaps = [];
 
-let selectedMood = null;
-
-// تاریخ امروز
-todayDate.textContent = new Intl.DateTimeFormat("fa-IR", {
-  weekday: "long", year: "numeric", month: "long", day: "numeric",
-}).format(new Date());
-
-// ساخت دکمه‌های حال‌وهوا
-MOODS.forEach((m) => {
-  const btn = document.createElement("button");
-  btn.className = "mood";
-  btn.textContent = m.emoji;
-  btn.dataset.value = m.value;
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".mood").forEach((b) => b.classList.remove("selected"));
-    btn.classList.add("selected");
-    selectedMood = m;
-  });
-  picker.appendChild(btn);
-});
-
-// ذخیره
-saveBtn.addEventListener("click", () => {
-  if (!selectedMood) {
-    alert("اول یه حال‌وهوا انتخاب کن 🙂");
-    return;
-  }
-  const entry = {
-    emoji: selectedMood.emoji,
-    value: selectedMood.value,
-    note: noteInput.value.trim(),
-    date: new Date().toISOString(),
-  };
-  const data = load();
-  data.push(entry);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  noteInput.value = "";
-  render();
-});
-
-function load() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-  } catch {
-    return [];
-  }
+function fmt(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, "0");
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
 }
 
-function render() {
-  const data = load().slice(-30);
+startBtn.addEventListener("click", () => {
+  startTime = Date.now();
+  distractions = 0;
+  lastDistractionAt = startTime;
+  gaps = [];
+  resultEl.classList.add("hidden");
+  statusEl.textContent = "در حال تمرکز... هر بار حواست پرت شد، دکمهٔ قرمز رو بزن.";
+  startBtn.disabled = true;
+  distractBtn.disabled = false;
+  stopBtn.disabled = false;
 
-  // نمودار
-  chart.innerHTML = "";
-  data.forEach((d) => {
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.style.height = `${(d.value / 5) * 100}%`;
-    bar.title = `${d.emoji} — ${new Intl.DateTimeFormat("fa-IR").format(new Date(d.date))}`;
-    chart.appendChild(bar);
-  });
+  tick = setInterval(() => {
+    const sec = Math.floor((Date.now() - startTime) / 1000);
+    timerEl.textContent = fmt(sec);
+  }, 250);
+});
 
-  // لیست
-  entriesList.innerHTML = "";
-  [...data].reverse().forEach((d) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-      <span class="emoji">${d.emoji}</span>
-      <span class="note">${d.note || "—"}</span>
-      <span class="date">${new Intl.DateTimeFormat("fa-IR").format(new Date(d.date))}</span>
-    `;
-    entriesList.appendChild(li);
-  });
-}
+distractBtn.addEventListener("click", () => {
+  const now = Date.now();
+  gaps.push((now - lastDistractionAt) / 1000);
+  lastDistractionAt = now;
+  distractions++;
+  statusEl.textContent = `حواس‌پرتی ثبت شد (${distractions}) — ادامه بده.`;
+  // افکت لرزش کوتاه
+  timerEl.animate(
+    [{ transform: "translateX(0)" }, { transform: "translateX(-6px)" },
+     { transform: "translateX(6px)" }, { transform: "translateX(0)" }],
+    { duration: 200 }
+  );
+});
 
-render();
+stopBtn.addEventListener("click", () => {
+  clearInterval(tick);
+  const totalSec = Math.floor((Date.now() - startTime) / 1000);
+  gaps.push((Date.now() - lastDistractionAt) / 1000);
+
+  // درصد تمرکز: هرچی میانگین فاصلهٔ حواس‌پرتی‌ها بیشتر، تمرکز بالاتر
+  const avgGap = gaps.reduce((a, b) => a + b, 0) / gaps.length;
+  let score = Math.min(100, Math.round((avgGap / 120) * 100)); // ۲ دقیقه = ۱۰۰٪
+  if (totalSec < 10) score = Math.min(score, 100);
+
+  const best = Number(localStorage.getItem("focusBest") || 0);
+  const newBest = score > best;
+  if (newBest) localStorage.setItem("focusBest", score);
+
+  resultEl.innerHTML = `
+    <div>⏱ مدت کل: <strong>${fmt(totalSec)}</strong></div>
+    <div>✋ حواس‌پرتی: <strong>${distractions}</strong></div>
+    <div>📊 درصد تمرکز: <strong>${score}%</strong></div>
+    <div>🏆 بهترین رکورد: <strong>${Math.max(best, score)}%</strong> ${newBest ? "🎉 رکورد جدید!" : ""}</div>
+  `;
+  resultEl.classList.remove("hidden");
+  statusEl.textContent = "تمومه. دوباره شروع کن؟";
+  startBtn.disabled = false;
+  distractBtn.disabled = true;
+  stopBtn.disabled = true;
+});
