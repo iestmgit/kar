@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ژورنال حال‌وهوا</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="app__header">
+      <h1>حال‌وهوای امروزت چطوره؟</h1>
+      <p class="app__subtitle" id="todayDate"></p>
+    </header>
+
+    <section class="mood-picker" id="moodPicker">
+      <!-- ایموجی‌ها با JS پر می‌شن -->
+    </section>
+
+    <section class="note-box">
+      <textarea id="noteInput" rows="3" placeholder="یه جمله دربارهٔ امروز..."></textarea>
+      <button id="saveBtn">ذخیره</button>
+    </section>
+
+    <section class="history">
+      <h2>روند ۳۰ روز اخیر</h2>
+      <div class="chart" id="chart"></div>
+      <ul class="entries" id="entries"></ul>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
