@@ -3,32 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ژورنال حال‌وهوا</title>
+  <title>تمرکزسنج</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="app">
-    <header class="app__header">
-      <h1>حال‌وهوای امروزت چطوره؟</h1>
-      <p class="app__subtitle" id="todayDate"></p>
-    </header>
+    <h1>تمرکزسنج</h1>
+    <p class="sub" id="status">آماده‌ای؟ شروع کن.</p>
 
-    <section class="mood-picker" id="moodPicker">
-      <!-- ایموجی‌ها با JS پر می‌شن -->
-    </section>
+    <div class="timer" id="timer">00:00</div>
 
-    <section class="note-box">
-      <textarea id="noteInput" rows="3" placeholder="یه جمله دربارهٔ امروز..."></textarea>
-      <button id="saveBtn">ذخیره</button>
-    </section>
+    <button id="startBtn" class="btn primary">شروع</button>
+    <button id="distractBtn" class="btn danger" disabled>
+      حواستم پرت شد ✋
+    </button>
+    <button id="stopBtn" class="btn ghost" disabled>پایان</button>
 
-    <section class="history">
-      <h2>روند ۳۰ روز اخیر</h2>
-      <div class="chart" id="chart"></div>
-      <ul class="entries" id="entries"></ul>
-    </section>
+    <div class="result hidden" id="result"></div>
   </main>
-
   <script src="app.js"></script>
 </body>
 </html>
